@@ -119,6 +119,7 @@ const els = {
   calcResultsWrap: document.getElementById('calcResultsWrap'),
   statusBanner: document.getElementById('statusBanner'),
   offersCount: document.getElementById('offersCount'),
+  offersBudgetBadge: document.getElementById('offersBudgetBadge'),
   offersList: document.getElementById('offersList'),
   replyPreview: document.getElementById('replyPreview'),
   saveSelectedToPortoBtn: document.getElementById('saveSelectedToPortoBtn'),
@@ -337,7 +338,7 @@ function renderCalculator() {
   }
 
   renderStatusBanner(currentOffers, summary);
-  renderOffersList(currentOffers, currentSelectedIds);
+  renderOffersList(currentOffers, currentSelectedIds, summary);
   renderReplyPreview(state.rawText, currentOffers, currentSelectedIds, myTag);
   renderSummaryBar(summary);
 }
@@ -382,8 +383,23 @@ function renderStatusBanner(offers, summary) {
   banner.textContent = `Ambil ${summary.count} dapur, profit ${profitDayTxt}/hari, ${topupTxt}.`;
 }
 
-function renderOffersList(offers, selectedIds) {
+function renderOffersList(offers, selectedIds, summary) {
   els.offersCount.textContent = String(offers.length);
+
+  const remaining = summary.capacity - summary.totalModal;
+  els.offersBudgetBadge.classList.toggle('is-short', remaining < 0);
+  if (remaining < 0) {
+    els.offersBudgetBadge.textContent = `Kurang: ${formatRupiah(
+      Math.abs(remaining),
+      state.unitMultiplier
+    )}`;
+  } else {
+    els.offersBudgetBadge.textContent = `Sisa uang: ${formatRupiah(
+      remaining,
+      state.unitMultiplier
+    )}`;
+  }
+
   els.offersList.innerHTML = '';
 
   if (offers.length === 0) {
@@ -455,7 +471,8 @@ function renderOffersList(offers, selectedIds) {
 
     body.append(top, meta);
 
-    if (offer.takenBy || offer.isEstimated || offer.isWeird) {
+    const showShortfall = offer.available && !isSelected && offer.modal > Math.max(0, remaining);
+    if (offer.takenBy || offer.isEstimated || offer.isWeird || showShortfall) {
       const badges = document.createElement('div');
       badges.className = 'offer-badges';
 
@@ -482,6 +499,14 @@ function renderOffersList(offers, selectedIds) {
         const b = document.createElement('span');
         b.className = 'badge badge-weird';
         b.textContent = 'Angka aneh';
+        badges.appendChild(b);
+      }
+
+      if (showShortfall) {
+        const kurang = offer.modal - Math.max(0, remaining);
+        const b = document.createElement('span');
+        b.className = 'badge badge-short';
+        b.textContent = `Kalau tambah ini: kurang ${formatRupiah(kurang, state.unitMultiplier)}`;
         badges.appendChild(b);
       }
 

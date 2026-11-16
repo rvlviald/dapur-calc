@@ -974,3 +974,25 @@ body.no-sticky-footer {
 .calc-results-wrap[hidden] {
   display: none;
 }
+
+.budget-pill {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  border: 1px solid var(--primary);
+}
+
+.budget-pill.is-short {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+
+.badge-short {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border: 1px solid var(--warn-border);
+}

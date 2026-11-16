@@ -964,3 +964,13 @@ select:focus {
 body.no-sticky-footer {
   padding-bottom: 24px;
 }
+
+.calc-results-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calc-results-wrap[hidden] {
+  display: none;
+}

@@ -57,17 +57,17 @@
           <h2 id="paste-heading">1. Chat Grup</h2>
           <div class="btn-row">
             <button id="pasteBtn" class="btn btn-sm btn-primary" type="button">
-              Tempel dari clipboard
+              Tempel Chat
             </button>
             <button id="clearBtn" class="btn btn-sm btn-ghost" type="button">
-              Hapus
+              Hapus Chat
             </button>
           </div>
         </div>
         <textarea
           id="groupInput"
-          rows="6"
-          placeholder="Tempel list dapur dari grup WhatsApp di sini...&#10;Contoh:&#10;12800 + 300 = 25/11&#10;13650 + 350 =24/11vivi"
+          rows="5"
+          placeholder="Tempel list dapur dari WhatsApp di sini..."
           aria-label="List dapur dari grup WhatsApp"
         ></textarea>
       </section>
@@ -93,57 +93,59 @@
         </div>
       </section>
 
-      <section class="section-controls" aria-label="Mode optimasi">
-        <div class="mode-row">
-          <div class="segmented" role="group" aria-label="Mode pilihan">
-            <button id="modePerDay" class="seg-btn active" type="button" data-mode="perDay">
-              Maks profit/hari
-            </button>
-            <button id="modeTotal" class="seg-btn" type="button" data-mode="total">
-              Maks total profit
+      <div id="calcEmptyGuide" class="empty-state">
+        Tempel chat grup di Langkah 1 untuk lihat pilihan dapur &amp; balasan grup.
+      </div>
+
+      <div id="calcResultsWrap" class="calc-results-wrap" hidden>
+        <section class="section-controls" aria-label="Mode optimasi">
+          <div class="mode-row">
+            <div class="segmented" role="group" aria-label="Mode pilihan">
+              <button id="modePerDay" class="seg-btn active" type="button" data-mode="perDay">
+                Untung/hari terbesar
+              </button>
+              <button id="modeTotal" class="seg-btn" type="button" data-mode="total">
+                Total untung terbesar
+              </button>
+            </div>
+            <button id="recalcBtn" class="btn btn-sm btn-outline" type="button">
+              Hitung Ulang
             </button>
           </div>
-          <button id="recalcBtn" class="btn btn-sm btn-outline" type="button">
-            Hitung ulang optimal
-          </button>
-        </div>
 
-        <div id="statusBanner" class="status-banner" role="status" aria-live="polite" hidden></div>
-      </section>
+          <div id="statusBanner" class="status-banner" role="status" aria-live="polite" hidden></div>
+        </section>
 
-      <section class="section-offers" aria-labelledby="offers-heading">
-        <div class="section-head">
-          <h2 id="offers-heading">3. Daftar Dapur <span id="offersCount" class="count-pill">0</span></h2>
-        </div>
-        <div id="offersList" class="offers-list">
-          <div class="empty-state">
-            Tempel chat grup di atas buat lihat ranking dapur terbaik.
+        <section class="section-offers" aria-labelledby="offers-heading">
+          <div class="section-head">
+            <h2 id="offers-heading">3. Daftar Dapur <span id="offersCount" class="count-pill">0</span></h2>
           </div>
-        </div>
-      </section>
+          <div id="offersList" class="offers-list"></div>
+        </section>
 
-      <section class="card section-reply" aria-labelledby="reply-heading">
-        <div class="section-head">
-          <h2 id="reply-heading">4. Balasan untuk Grup</h2>
-          <button id="saveSelectedToPortoBtn" class="btn btn-sm btn-outline" type="button">
-            + Catat ke Porto
-          </button>
-        </div>
-        <pre id="replyPreview" class="reply-preview"><code>Belum ada chat yang ditempel.</code></pre>
-        <div class="reply-actions">
-          <button id="copyGroupBtn" class="btn btn-primary btn-lg" type="button">
-            Copy untuk grup
-          </button>
-          <div class="reply-sub-actions">
-            <button id="shareWaBtn" class="btn btn-wa" type="button">
-              Share ke WhatsApp
-            </button>
-            <button id="copyMineBtn" class="btn btn-outline" type="button">
-              Copy cuma dapur gue
+        <section class="card section-reply" aria-labelledby="reply-heading">
+          <div class="section-head">
+            <h2 id="reply-heading">4. Balasan untuk Grup</h2>
+            <button id="saveSelectedToPortoBtn" class="btn btn-sm btn-outline" type="button">
+              + Catat ke Porto
             </button>
           </div>
-        </div>
-      </section>
+          <pre id="replyPreview" class="reply-preview"><code>Belum ada chat yang ditempel.</code></pre>
+          <div class="reply-actions">
+            <button id="copyGroupBtn" class="btn btn-primary btn-lg" type="button">
+              Copy untuk Grup
+            </button>
+            <div class="reply-sub-actions">
+              <button id="shareWaBtn" class="btn btn-wa" type="button">
+                Kirim ke WhatsApp
+              </button>
+              <button id="copyMineBtn" class="btn btn-outline" type="button">
+                Copy Dapur Saya Saja
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
 
     <!-- ==================== PAGE 2: PORTO ==================== -->

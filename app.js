@@ -115,6 +115,8 @@ const els = {
   modePerDay: document.getElementById('modePerDay'),
   modeTotal: document.getElementById('modeTotal'),
   recalcBtn: document.getElementById('recalcBtn'),
+  calcEmptyGuide: document.getElementById('calcEmptyGuide'),
+  calcResultsWrap: document.getElementById('calcResultsWrap'),
   statusBanner: document.getElementById('statusBanner'),
   offersCount: document.getElementById('offersCount'),
   offersList: document.getElementById('offersList'),
@@ -231,8 +233,9 @@ function switchPage(page) {
   els.pagePorto.hidden = page !== 'porto';
   els.pageSetting.hidden = page !== 'setting';
 
-  els.stickySummary.hidden = page !== 'calculator';
-  document.body.classList.toggle('no-sticky-footer', page !== 'calculator');
+  const showSticky = page === 'calculator' && Boolean(state.rawText.trim());
+  els.stickySummary.hidden = !showSticky;
+  document.body.classList.toggle('no-sticky-footer', !showSticky);
 
   for (const tab of els.navTabs) {
     const isActive = tab.dataset.page === page;
@@ -289,6 +292,22 @@ function sortOffersForDisplay(offers) {
 }
 
 function renderCalculator() {
+  const hasText = Boolean(state.rawText && state.rawText.trim());
+  els.calcEmptyGuide.hidden = hasText;
+  els.calcResultsWrap.hidden = !hasText;
+  const showSticky = state.activePage === 'calculator' && hasText;
+  els.stickySummary.hidden = !showSticky;
+  document.body.classList.toggle('no-sticky-footer', !showSticky);
+
+  if (!hasText) {
+    currentOffers = [];
+    currentSelectedIds = new Set();
+    els.offersList.innerHTML = '';
+    els.replyPreview.innerHTML = '';
+    els.offersCount.textContent = '0';
+    return;
+  }
+
   const uangGue = Math.max(0, Number(state.uangGue) || 0);
   const saldoBandar = Math.max(0, Number(state.saldoBandar) || 0);
   const myTag = (state.myTag || 'vivi').trim() || 'vivi';
@@ -872,6 +891,8 @@ els.shareWaBtn.addEventListener('click', async () => {
     showToast('Belum ada teks untuk dibagikan');
     return;
   }
+  await copyToClipboard(reply);
+  showToast('Tersalin & membuka WhatsApp...');
   const waUrl = `https://wa.me/?text=${encodeURIComponent(reply)}`;
   const win = window.open(waUrl, '_blank', 'noopener');
   if (!win && navigator.share) {
@@ -1049,7 +1070,22 @@ if ('serviceWorker' in navigator) {
   }
 }
 
+// Handle incoming Web Share Target (from WhatsApp Share on Android PWA)
+function handleIncomingShareTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedText = params.get('text') || params.get('title');
+  if (sharedText && sharedText.trim()) {
+    state.rawText = sharedText.trim();
+    state.activePage = 'calculator';
+    manualSelectedIds = null;
+    saveState(state);
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+}
+
 // Initial render
+handleIncomingShareTarget();
 syncInputsFromState();
 resetPortoForm();
 updatePortoNavBadge();

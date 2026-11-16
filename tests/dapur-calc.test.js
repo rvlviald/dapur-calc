@@ -10,6 +10,7 @@ import {
   computeSummary,
   isBetterState,
 } from '../optimizer.js';
+import { enrichPortoEntry, computePortoSummary } from '../porto.js';
 
 const TODAY = '2026-11-15';
 
@@ -240,4 +241,36 @@ test('Reply text: leaves unselected lines byte-for-byte identical', () => {
 
   const mineOnly = buildMyLinesOnly(original, new Set([2, 4]), 'vivi');
   assert.equal(mineOnly, '12800 + 300 = 25/11 vivi\n13800 + 350 =25/11 vivi');
+});
+
+test('Porto: enrichPortoEntry calculates tenor, profitPerDay, and yieldPerDay', () => {
+  const e = enrichPortoEntry({
+    investDate: '2026-11-16',
+    cairDate: '2026-11-26',
+    modal: 14000,
+    profit: 350,
+    isCair: false,
+    note: 'Dapur tes',
+  });
+  assert.equal(e.tenor, 10);
+  assert.equal(e.totalCair, 14350);
+  assert.equal(e.profitPerDay, 35);
+  assert.ok(Math.abs(e.yieldTotal - 0.025) < 1e-9);
+  assert.ok(Math.abs(e.yieldPerDay - 0.0025) < 1e-9);
+});
+
+test('Porto: computePortoSummary aggregates active vs cair and weighted avg yield', () => {
+  const summary = computePortoSummary([
+    { investDate: '2026-11-06', cairDate: '2026-11-14', modal: 10000, profit: 300, isCair: true },
+    { investDate: '2026-11-16', cairDate: '2026-11-26', modal: 20000, profit: 500, isCair: false },
+  ]);
+  assert.equal(summary.cairCount, 1);
+  assert.equal(summary.cairModal, 10000);
+  assert.equal(summary.cairProfit, 300);
+  assert.equal(summary.activeCount, 1);
+  assert.equal(summary.activeModal, 20000);
+  assert.equal(summary.activeProfit, 500);
+  assert.equal(summary.totalModal, 30000);
+  assert.equal(summary.totalProfit, 800);
+  assert.ok(summary.avgYieldPerDay > 0);
 });

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Dapur Calc — Hitung Dapur Terbaik</title>
-  <meta name="description" content="Kalkulator offline-first buat milih dapur paling cuan dan bikin balasan grup WhatsApp." />
+  <meta name="description" content="Kalkulator offline-first buat milih dapur paling cuan, catat portofolio, dan bikin balasan grup WhatsApp." />
 
   <meta name="theme-color" content="#15803d" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f291a" media="(prefers-color-scheme: dark)" />
@@ -21,128 +21,288 @@
 </head>
 <body>
   <header class="app-header">
-    <div class="header-brand">
-      <img src="./icons/icon-192.png" alt="" class="brand-icon" width="32" height="32" />
-      <div>
-        <h1>Dapur Calc</h1>
-        <p class="subtitle">Pilih dapur paling cuan, langsung balas grup</p>
+    <div class="header-top">
+      <div class="header-brand">
+        <img src="./icons/icon-192.png" alt="" class="brand-icon" width="32" height="32" />
+        <div>
+          <h1>Dapur Calc</h1>
+          <p class="subtitle">Pilih dapur cuan, catat porto, balas grup</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="installBtn" class="btn btn-sm btn-install" type="button" hidden>
+          Install
+        </button>
       </div>
     </div>
-    <div class="header-actions">
-      <button id="installBtn" class="btn btn-sm btn-install" type="button" hidden>
-        Install
+
+    <nav class="top-nav" role="tablist" aria-label="Halaman utama">
+      <button id="navCalculator" class="nav-tab active" type="button" role="tab" aria-selected="true" data-page="calculator">
+        Calculator
       </button>
-      <button id="settingsBtn" class="btn-icon" type="button" aria-label="Pengaturan" title="Pengaturan">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
+      <button id="navPorto" class="nav-tab" type="button" role="tab" aria-selected="false" data-page="porto">
+        Porto <span id="portoNavBadge" class="nav-badge" hidden>0</span>
       </button>
-    </div>
+      <button id="navSetting" class="nav-tab" type="button" role="tab" aria-selected="false" data-page="setting">
+        Setting
+      </button>
+    </nav>
   </header>
 
   <main class="container">
-    <!-- Step 1: Paste WhatsApp message -->
-    <section class="card section-paste" aria-labelledby="paste-heading">
-      <div class="section-head">
-        <h2 id="paste-heading">1. Chat Grup</h2>
-        <div class="btn-row">
-          <button id="pasteBtn" class="btn btn-sm btn-primary" type="button">
-            Tempel dari clipboard
-          </button>
-          <button id="clearBtn" class="btn btn-sm btn-ghost" type="button">
-            Hapus
-          </button>
+    <!-- ==================== PAGE 1: CALCULATOR ==================== -->
+    <div id="pageCalculator" class="page-view">
+      <section class="card section-paste" aria-labelledby="paste-heading">
+        <div class="section-head">
+          <h2 id="paste-heading">1. Chat Grup</h2>
+          <div class="btn-row">
+            <button id="pasteBtn" class="btn btn-sm btn-primary" type="button">
+              Tempel dari clipboard
+            </button>
+            <button id="clearBtn" class="btn btn-sm btn-ghost" type="button">
+              Hapus
+            </button>
+          </div>
         </div>
-      </div>
-      <textarea
-        id="groupInput"
-        rows="6"
-        placeholder="Tempel list dapur dari grup WhatsApp di sini...&#10;Contoh:&#10;12800 + 300 = 25/11&#10;13650 + 350 =24/11vivi"
-        aria-label="List dapur dari grup WhatsApp"
-      ></textarea>
-    </section>
+        <textarea
+          id="groupInput"
+          rows="6"
+          placeholder="Tempel list dapur dari grup WhatsApp di sini...&#10;Contoh:&#10;12800 + 300 = 25/11&#10;13650 + 350 =24/11vivi"
+          aria-label="List dapur dari grup WhatsApp"
+        ></textarea>
+      </section>
 
-    <!-- Step 2: Capital & Settings Inputs -->
-    <section class="card section-inputs" aria-labelledby="inputs-heading">
-      <h2 id="inputs-heading">2. Modal &amp; Info</h2>
-      <div class="input-grid">
-        <div class="field">
-          <label for="uangGue">Uang gue <span class="unit-badge" id="unitLabel1">(×1.000)</span></label>
-          <input id="uangGue" type="number" inputmode="numeric" min="0" step="100" placeholder="40000" />
-          <div class="field-hint" id="uangGueFmt">Rp 0</div>
-        </div>
-        <div class="field">
-          <label for="saldoBandar">Saldo bandar <span class="unit-badge" id="unitLabel2">(×1.000)</span></label>
-          <input id="saldoBandar" type="number" inputmode="numeric" min="0" step="100" placeholder="15000" />
-          <div class="field-hint" id="saldoBandarFmt">Rp 0</div>
-        </div>
-        <div class="field">
-          <label for="myTag">Tanda nama</label>
-          <input id="myTag" type="text" placeholder="vivi" autocomplete="off" autocapitalize="none" />
-        </div>
-        <div class="field">
-          <label for="todayDate">Hari ini</label>
-          <input id="todayDate" type="date" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 3: Mode & Recommendation Banner -->
-    <section class="section-controls" aria-label="Mode optimasi">
-      <div class="mode-row">
-        <div class="segmented" role="group" aria-label="Mode pilihan">
-          <button id="modePerDay" class="seg-btn active" type="button" data-mode="perDay">
-            Maks profit/hari
-          </button>
-          <button id="modeTotal" class="seg-btn" type="button" data-mode="total">
-            Maks total profit
+      <section class="card section-inputs" aria-labelledby="inputs-heading">
+        <div class="section-head">
+          <h2 id="inputs-heading">2. Modal</h2>
+          <button id="goSettingChip" class="chip-btn" type="button" title="Ubah tag nama atau tanggal di Setting">
+            <span id="calcMetaChip">vivi • Hari ini</span>
           </button>
         </div>
-        <button id="recalcBtn" class="btn btn-sm btn-outline" type="button">
-          Hitung ulang optimal
-        </button>
-      </div>
-
-      <div id="statusBanner" class="status-banner" role="status" aria-live="polite" hidden></div>
-    </section>
-
-    <!-- Step 4: Kitchen Cards -->
-    <section class="section-offers" aria-labelledby="offers-heading">
-      <div class="section-head">
-        <h2 id="offers-heading">3. Daftar Dapur <span id="offersCount" class="count-pill">0</span></h2>
-      </div>
-      <div id="offersList" class="offers-list">
-        <div class="empty-state">
-          Tempel chat grup di atas buat lihat ranking dapur terbaik.
+        <div class="input-grid">
+          <div class="field">
+            <label for="uangGue">Uang gue <span class="unit-badge" id="unitLabel1">(×1.000)</span></label>
+            <input id="uangGue" type="number" inputmode="numeric" min="0" step="100" placeholder="40000" />
+            <div class="field-hint" id="uangGueFmt">Rp 0</div>
+          </div>
+          <div class="field">
+            <label for="saldoBandar">Saldo bandar <span class="unit-badge" id="unitLabel2">(×1.000)</span></label>
+            <input id="saldoBandar" type="number" inputmode="numeric" min="0" step="100" placeholder="15000" />
+            <div class="field-hint" id="saldoBandarFmt">Rp 0</div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Step 5: Reply Text Preview & Share -->
-    <section class="card section-reply" aria-labelledby="reply-heading">
-      <div class="section-head">
-        <h2 id="reply-heading">4. Balasan untuk Grup</h2>
-      </div>
-      <pre id="replyPreview" class="reply-preview"><code>Belum ada chat yang ditempel.</code></pre>
-      <div class="reply-actions">
-        <button id="copyGroupBtn" class="btn btn-primary btn-lg" type="button">
-          Copy untuk grup
-        </button>
-        <div class="reply-sub-actions">
-          <button id="shareWaBtn" class="btn btn-wa" type="button">
-            Share ke WhatsApp
-          </button>
-          <button id="copyMineBtn" class="btn btn-outline" type="button">
-            Copy cuma dapur gue
+      <section class="section-controls" aria-label="Mode optimasi">
+        <div class="mode-row">
+          <div class="segmented" role="group" aria-label="Mode pilihan">
+            <button id="modePerDay" class="seg-btn active" type="button" data-mode="perDay">
+              Maks profit/hari
+            </button>
+            <button id="modeTotal" class="seg-btn" type="button" data-mode="total">
+              Maks total profit
+            </button>
+          </div>
+          <button id="recalcBtn" class="btn btn-sm btn-outline" type="button">
+            Hitung ulang optimal
           </button>
         </div>
-      </div>
-    </section>
+
+        <div id="statusBanner" class="status-banner" role="status" aria-live="polite" hidden></div>
+      </section>
+
+      <section class="section-offers" aria-labelledby="offers-heading">
+        <div class="section-head">
+          <h2 id="offers-heading">3. Daftar Dapur <span id="offersCount" class="count-pill">0</span></h2>
+        </div>
+        <div id="offersList" class="offers-list">
+          <div class="empty-state">
+            Tempel chat grup di atas buat lihat ranking dapur terbaik.
+          </div>
+        </div>
+      </section>
+
+      <section class="card section-reply" aria-labelledby="reply-heading">
+        <div class="section-head">
+          <h2 id="reply-heading">4. Balasan untuk Grup</h2>
+          <button id="saveSelectedToPortoBtn" class="btn btn-sm btn-outline" type="button">
+            + Catat ke Porto
+          </button>
+        </div>
+        <pre id="replyPreview" class="reply-preview"><code>Belum ada chat yang ditempel.</code></pre>
+        <div class="reply-actions">
+          <button id="copyGroupBtn" class="btn btn-primary btn-lg" type="button">
+            Copy untuk grup
+          </button>
+          <div class="reply-sub-actions">
+            <button id="shareWaBtn" class="btn btn-wa" type="button">
+              Share ke WhatsApp
+            </button>
+            <button id="copyMineBtn" class="btn btn-outline" type="button">
+              Copy cuma dapur gue
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== PAGE 2: PORTO ==================== -->
+    <div id="pagePorto" class="page-view" hidden>
+      <!-- Portfolio Summary Cards -->
+      <section class="porto-summary-grid" aria-label="Ringkasan portofolio">
+        <div class="card stat-card stat-active">
+          <span class="stat-label">Masih Nunggu (<span id="portoActiveCount">0</span>)</span>
+          <strong id="portoActiveModal" class="stat-value">Rp 0</strong>
+          <span class="stat-sub">Est. profit: <b id="portoActiveProfit">Rp 0</b></span>
+          <span class="stat-sub">Akan cair: <b id="portoActiveCair">Rp 0</b></span>
+        </div>
+        <div class="card stat-card stat-cair">
+          <span class="stat-label">Sudah Cair (<span id="portoCairCount">0</span>)</span>
+          <strong id="portoCairModal" class="stat-value">Rp 0</strong>
+          <span class="stat-sub">Profit cair: <b id="portoCairProfit">Rp 0</b></span>
+          <span class="stat-sub">Total cair: <b id="portoCairTotal">Rp 0</b></span>
+        </div>
+        <div class="card stat-card stat-total">
+          <div class="stat-total-row">
+            <div>
+              <span class="stat-label">Total Sudah Di-invest (<span id="portoTotalCount">0</span> dapur)</span>
+              <strong id="portoTotalModal" class="stat-value">Rp 0</strong>
+            </div>
+            <div class="stat-total-right">
+              <span class="stat-label">Total Profit</span>
+              <strong id="portoTotalProfit" class="stat-value is-green">Rp 0</strong>
+              <span class="stat-sub">Rata-rata: <b id="portoAvgYield">0,00%/hr</b></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Manual Input Form -->
+      <section class="card" aria-labelledby="porto-form-heading">
+        <div class="section-head">
+          <h2 id="porto-form-heading">Catat Investasi Manual</h2>
+          <button id="portoCancelEditBtn" class="btn btn-sm btn-ghost" type="button" hidden>
+            Batal edit
+          </button>
+        </div>
+        <form id="portoForm" class="porto-form">
+          <div class="input-grid">
+            <div class="field">
+              <label for="portoInvestDate">Tanggal invest</label>
+              <input id="portoInvestDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="portoCairDate">Tanggal cair</label>
+              <input id="portoCairDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="portoModal">Modal <span class="unit-badge" id="portoUnitLabel1">(×1.000)</span></label>
+              <input id="portoModal" type="number" inputmode="numeric" min="1" step="50" placeholder="14000" required />
+              <div class="field-hint" id="portoModalFmt">Rp 0</div>
+            </div>
+            <div class="field">
+              <label for="portoProfit">Untung <span class="unit-badge" id="portoUnitLabel2">(×1.000)</span></label>
+              <input id="portoProfit" type="number" inputmode="numeric" min="0" step="10" placeholder="350" required />
+              <div class="field-hint" id="portoProfitFmt">Rp 0</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 10px;">
+            <label for="portoNote">Catatan (opsional)</label>
+            <input id="portoNote" type="text" placeholder="Misal: Dapur A / sharing liana" />
+          </div>
+
+          <label class="checkbox-row">
+            <input id="portoIsCair" type="checkbox" />
+            <span>Sudah cair</span>
+          </label>
+
+          <div id="portoLivePreview" class="porto-live-preview">
+            Tenor: <b>1 hr</b> • Profit/hr: <b>Rp 0</b> • Yield: <b>0,00%/hr</b> (0,00% total)
+          </div>
+
+          <button id="portoSubmitBtn" class="btn btn-primary btn-lg" type="submit">
+            Simpan ke Porto
+          </button>
+        </form>
+      </section>
+
+      <!-- Portfolio List -->
+      <section class="section-offers" aria-labelledby="porto-list-heading">
+        <div class="section-head">
+          <h2 id="porto-list-heading">Daftar Investasi</h2>
+          <div class="filter-pills" role="group" aria-label="Filter status">
+            <button class="filter-pill active" type="button" data-filter="all">Semua</button>
+            <button class="filter-pill" type="button" data-filter="pending">Nunggu</button>
+            <button class="filter-pill" type="button" data-filter="cair">Cair</button>
+          </div>
+        </div>
+        <div id="portoList" class="offers-list">
+          <div class="empty-state">Belum ada catatan investasi.</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== PAGE 3: SETTING ==================== -->
+    <div id="pageSetting" class="page-view" hidden>
+      <section class="card" aria-labelledby="setting-identity-heading">
+        <h2 id="setting-identity-heading" style="margin-bottom: 12px;">Identitas &amp; Tanggal</h2>
+        <div class="setting-stack">
+          <div class="field">
+            <label for="myTag">Tanda nama di grup</label>
+            <input id="myTag" type="text" placeholder="vivi" autocomplete="off" autocapitalize="none" />
+            <p class="field-help">Nama yang otomatis ditempel di akhir baris dapur pilihan lu.</p>
+          </div>
+
+          <div class="field">
+            <label for="todayDate">Hari ini (patokan hitung tenor)</label>
+            <div class="date-row">
+              <input id="todayDate" type="date" />
+              <button id="resetTodayBtn" class="btn btn-sm btn-outline" type="button">
+                Hari ini
+              </button>
+            </div>
+            <p class="field-help">Ubah kalau lagi proses pesan grup kemarin.</p>
+          </div>
+
+          <div class="field">
+            <label for="unitSelect">Satuan angka di chat grup &amp; input</label>
+            <select id="unitSelect">
+              <option value="1000">Ribuan (×1.000) — default</option>
+              <option value="1">Rupiah penuh (×1)</option>
+            </select>
+            <p class="field-help">
+              Kalau grup nulis <code>18500</code> untuk Rp 18.500.000, pakai Ribuan (×1.000).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="setting-data-heading">
+        <h2 id="setting-data-heading" style="margin-bottom: 12px;">Data &amp; Backup Offline</h2>
+        <div class="setting-stack">
+          <p class="privacy-note" style="margin: 0;">
+            Semua data (modal, chat terakhir, dan portofolio) disimpan 100% lokal di HP lu. Tidak ada server, tidak ada tracking.
+          </p>
+          <div class="reply-sub-actions">
+            <button id="exportDataBtn" class="btn btn-outline" type="button">
+              Export Backup (.json)
+            </button>
+            <button id="importDataBtn" class="btn btn-outline" type="button">
+              Import Backup
+            </button>
+            <input id="importFileInput" type="file" accept="application/json,.json" hidden />
+          </div>
+          <button id="clearPortoBtn" class="btn btn-danger-outline" type="button">
+            Hapus Semua Catatan Porto
+          </button>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <!-- Sticky Bottom Summary Bar -->
-  <footer class="sticky-summary" aria-label="Ringkasan modal dan topup">
+  <!-- Sticky Bottom Summary Bar (Calculator only) -->
+  <footer id="stickySummary" class="sticky-summary" aria-label="Ringkasan modal dan topup">
     <div class="summary-inner">
       <div class="summary-topup">
         <span class="summary-label">Topup bandar yang harus dikirim</span>
@@ -168,29 +328,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Settings Dialog -->
-  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settings-title">
-    <div class="dialog-header">
-      <h2 id="settings-title">Pengaturan</h2>
-      <button id="closeSettingsBtn" class="btn-icon" type="button" aria-label="Tutup">✕</button>
-    </div>
-    <div class="dialog-body">
-      <div class="field">
-        <label for="unitSelect">Satuan angka di chat grup</label>
-        <select id="unitSelect">
-          <option value="1000">Ribuan (×1.000) — default</option>
-          <option value="1">Rupiah penuh (×1)</option>
-        </select>
-        <p class="field-help">
-          Kalau grup nulis <code>18500</code> untuk Rp 18.500.000, pakai Ribuan (×1.000).
-        </p>
-      </div>
-      <p class="privacy-note">
-        Semua data disimpan di HP kamu (localStorage). Tidak ada server, tidak ada tracking, jalan 100% offline.
-      </p>
-    </div>
-  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 

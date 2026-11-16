@@ -73,18 +73,94 @@ body {
   padding-bottom: 168px;
 }
 
-/* Header */
+/* Header & 3-Page Navigation */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  padding: 10px 14px 6px;
+}
+
+.top-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px 12px 8px;
+}
+
+.nav-tab {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nav-tab.active {
+    color: #052e16;
+  }
+}
+
+.nav-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.nav-tab:not(.active) .nav-badge {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.page-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.page-view[hidden] {
+  display: none;
+}
+
+.chip-btn {
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .header-brand {
@@ -704,4 +780,187 @@ select:focus {
   font-size: 0.88rem;
   font-weight: 600;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Porto Page */
+.porto-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+}
+
+.stat-card.stat-total {
+  grid-column: 1 / -1;
+}
+
+.stat-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-total-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.stat-value.is-green {
+  color: var(--primary);
+}
+
+.stat-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.porto-live-preview {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.porto-live-preview b {
+  color: var(--text);
+}
+
+.filter-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.filter-pill {
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .filter-pill.active {
+    color: #052e16;
+  }
+}
+
+.porto-item {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.porto-item.is-cair {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+.porto-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.porto-item-actions .btn {
+  min-height: 38px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
+.badge-pending {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border: 1px solid var(--warn-border);
+}
+
+.badge-cair {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  border: 1px solid var(--primary);
+}
+
+/* Setting Page */
+.setting-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.date-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-row input[type="date"] {
+  flex: 1;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+body.no-sticky-footer {
+  padding-bottom: 24px;
 }

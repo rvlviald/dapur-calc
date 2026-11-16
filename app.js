@@ -4,10 +4,13 @@ import {
   buildMyLinesOnly,
   normalizeDate,
   formatISODate,
+  formatShortDate,
 } from './parser.js';
 import { optimizeSelection, computeSummary } from './optimizer.js';
+import { enrichPortoEntry, computePortoSummary } from './porto.js';
 
 const STORAGE_KEY = 'dapurCalcStateV1';
+const PORTO_STORAGE_KEY = 'dapurCalcPortoV1';
 const idFormatter = new Intl.NumberFormat('id-ID');
 
 function getDeviceTodayISO() {
@@ -23,6 +26,7 @@ function loadState() {
     mode: 'perDay',
     unitMultiplier: 1000,
     rawText: '',
+    activePage: 'calculator',
   };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -33,6 +37,9 @@ function loadState() {
       myTag: saved.myTag || defaults.myTag,
       unitMultiplier: Number(saved.unitMultiplier) === 1 ? 1 : 1000,
       mode: saved.mode === 'total' ? 'total' : 'perDay',
+      activePage: ['calculator', 'porto', 'setting'].includes(saved.activePage)
+        ? saved.activePage
+        : 'calculator',
     };
   } catch {
     return defaults;
@@ -42,6 +49,23 @@ function loadState() {
 function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function loadPorto() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(PORTO_STORAGE_KEY) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePorto(entries) {
+  try {
+    localStorage.setItem(PORTO_STORAGE_KEY, JSON.stringify(entries));
   } catch {
     // Ignore storage quota errors
   }
@@ -68,6 +92,17 @@ function formatPercent(ratio) {
 
 // DOM references
 const els = {
+  // Navigation & pages
+  navTabs: document.querySelectorAll('.nav-tab'),
+  pageCalculator: document.getElementById('pageCalculator'),
+  pagePorto: document.getElementById('pagePorto'),
+  pageSetting: document.getElementById('pageSetting'),
+  portoNavBadge: document.getElementById('portoNavBadge'),
+  stickySummary: document.getElementById('stickySummary'),
+  goSettingChip: document.getElementById('goSettingChip'),
+  calcMetaChip: document.getElementById('calcMetaChip'),
+
+  // Calculator
   groupInput: document.getElementById('groupInput'),
   pasteBtn: document.getElementById('pasteBtn'),
   clearBtn: document.getElementById('clearBtn'),
@@ -77,8 +112,6 @@ const els = {
   saldoBandarFmt: document.getElementById('saldoBandarFmt'),
   unitLabel1: document.getElementById('unitLabel1'),
   unitLabel2: document.getElementById('unitLabel2'),
-  myTag: document.getElementById('myTag'),
-  todayDate: document.getElementById('todayDate'),
   modePerDay: document.getElementById('modePerDay'),
   modeTotal: document.getElementById('modeTotal'),
   recalcBtn: document.getElementById('recalcBtn'),
@@ -86,6 +119,7 @@ const els = {
   offersCount: document.getElementById('offersCount'),
   offersList: document.getElementById('offersList'),
   replyPreview: document.getElementById('replyPreview'),
+  saveSelectedToPortoBtn: document.getElementById('saveSelectedToPortoBtn'),
   copyGroupBtn: document.getElementById('copyGroupBtn'),
   shareWaBtn: document.getElementById('shareWaBtn'),
   copyMineBtn: document.getElementById('copyMineBtn'),
@@ -94,16 +128,58 @@ const els = {
   summaryProfitDay: document.getElementById('summaryProfitDay'),
   summaryProfitTotal: document.getElementById('summaryProfitTotal'),
   summarySisa: document.getElementById('summarySisa'),
-  installBtn: document.getElementById('installBtn'),
-  settingsBtn: document.getElementById('settingsBtn'),
-  settingsDialog: document.getElementById('settingsDialog'),
-  closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+
+  // Porto
+  portoActiveCount: document.getElementById('portoActiveCount'),
+  portoActiveModal: document.getElementById('portoActiveModal'),
+  portoActiveProfit: document.getElementById('portoActiveProfit'),
+  portoActiveCair: document.getElementById('portoActiveCair'),
+  portoCairCount: document.getElementById('portoCairCount'),
+  portoCairModal: document.getElementById('portoCairModal'),
+  portoCairProfit: document.getElementById('portoCairProfit'),
+  portoCairTotal: document.getElementById('portoCairTotal'),
+  portoTotalCount: document.getElementById('portoTotalCount'),
+  portoTotalModal: document.getElementById('portoTotalModal'),
+  portoTotalProfit: document.getElementById('portoTotalProfit'),
+  portoAvgYield: document.getElementById('portoAvgYield'),
+  portoForm: document.getElementById('portoForm'),
+  portoCancelEditBtn: document.getElementById('portoCancelEditBtn'),
+  portoInvestDate: document.getElementById('portoInvestDate'),
+  portoCairDate: document.getElementById('portoCairDate'),
+  portoModal: document.getElementById('portoModal'),
+  portoProfit: document.getElementById('portoProfit'),
+  portoModalFmt: document.getElementById('portoModalFmt'),
+  portoProfitFmt: document.getElementById('portoProfitFmt'),
+  portoUnitLabel1: document.getElementById('portoUnitLabel1'),
+  portoUnitLabel2: document.getElementById('portoUnitLabel2'),
+  portoNote: document.getElementById('portoNote'),
+  portoIsCair: document.getElementById('portoIsCair'),
+  portoLivePreview: document.getElementById('portoLivePreview'),
+  portoSubmitBtn: document.getElementById('portoSubmitBtn'),
+  portoFilterPills: document.querySelectorAll('.filter-pill'),
+  portoList: document.getElementById('portoList'),
+
+  // Setting
+  myTag: document.getElementById('myTag'),
+  todayDate: document.getElementById('todayDate'),
+  resetTodayBtn: document.getElementById('resetTodayBtn'),
   unitSelect: document.getElementById('unitSelect'),
+  exportDataBtn: document.getElementById('exportDataBtn'),
+  importDataBtn: document.getElementById('importDataBtn'),
+  importFileInput: document.getElementById('importFileInput'),
+  clearPortoBtn: document.getElementById('clearPortoBtn'),
+
+  // Global
+  installBtn: document.getElementById('installBtn'),
   toast: document.getElementById('toast'),
 };
 
 const state = loadState();
-let manualSelectedIds = null; // null = auto-optimized; Set<string> = manual override
+let portoEntries = loadPorto();
+let portoFilter = 'all';
+let editingPortoId = null;
+
+let manualSelectedIds = null;
 let currentOffers = [];
 let currentSelectedIds = new Set();
 let deferredInstallPrompt = null;
@@ -145,6 +221,32 @@ async function copyToClipboard(text) {
   return ok;
 }
 
+// ==================== PAGE NAVIGATION ====================
+
+function switchPage(page) {
+  state.activePage = page;
+  saveState(state);
+
+  els.pageCalculator.hidden = page !== 'calculator';
+  els.pagePorto.hidden = page !== 'porto';
+  els.pageSetting.hidden = page !== 'setting';
+
+  els.stickySummary.hidden = page !== 'calculator';
+  document.body.classList.toggle('no-sticky-footer', page !== 'calculator');
+
+  for (const tab of els.navTabs) {
+    const isActive = tab.dataset.page === page;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  }
+
+  if (page === 'porto') {
+    renderPorto();
+  }
+}
+
+// ==================== CALCULATOR ====================
+
 function syncInputsFromState() {
   els.groupInput.value = state.rawText;
   els.uangGue.value = state.uangGue;
@@ -158,6 +260,13 @@ function syncInputsFromState() {
   const unitText = state.unitMultiplier === 1000 ? '(×1.000)' : '(×1)';
   els.unitLabel1.textContent = unitText;
   els.unitLabel2.textContent = unitText;
+  els.portoUnitLabel1.textContent = unitText;
+  els.portoUnitLabel2.textContent = unitText;
+
+  const tag = (state.myTag || 'vivi').trim() || 'vivi';
+  const shortToday = formatShortDate(normalizeDate(state.today));
+  els.calcMetaChip.textContent = `Tag: ${tag} • ${shortToday}`;
+
   updateMoneyHints();
 }
 
@@ -179,7 +288,7 @@ function sortOffersForDisplay(offers) {
   });
 }
 
-function render() {
+function renderCalculator() {
   const uangGue = Math.max(0, Number(state.uangGue) || 0);
   const saldoBandar = Math.max(0, Number(state.saldoBandar) || 0);
   const myTag = (state.myTag || 'vivi').trim() || 'vivi';
@@ -198,7 +307,6 @@ function render() {
     currentSelectedIds = opt.selectedIds;
     summary = opt.summary;
   } else {
-    // Keep only valid available IDs from manual override
     const validIds = new Set(
       currentOffers.filter((o) => o.available).map((o) => o.id)
     );
@@ -296,7 +404,7 @@ function renderOffersList(offers, selectedIds) {
       } else {
         manualSelectedIds.delete(offer.id);
       }
-      render();
+      renderCalculator();
     });
     checkWrap.appendChild(checkbox);
 
@@ -318,7 +426,6 @@ function renderOffersList(offers, selectedIds) {
 
     const meta = document.createElement('div');
     meta.className = 'offer-meta';
-    meta.innerHTML = '';
     const m1 = document.createElement('span');
     m1.textContent = `Profit: ${formatRupiah(offer.profit, state.unitMultiplier)}`;
     const m2 = document.createElement('span');
@@ -451,56 +558,263 @@ function renderSummaryBar(summary) {
   }
 }
 
-function handleInputChange() {
+function handleCalcInputChange() {
   manualSelectedIds = null;
   saveState(state);
-  updateMoneyHints();
-  render();
+  syncInputsFromState();
+  renderCalculator();
 }
 
-// Event listeners
+// ==================== PORTO ====================
+
+function resetPortoForm() {
+  editingPortoId = null;
+  els.portoInvestDate.value = state.today || getDeviceTodayISO();
+  els.portoCairDate.value = state.today || getDeviceTodayISO();
+  els.portoModal.value = '';
+  els.portoProfit.value = '';
+  els.portoNote.value = '';
+  els.portoIsCair.checked = false;
+  els.portoSubmitBtn.textContent = 'Simpan ke Porto';
+  els.portoCancelEditBtn.hidden = true;
+  updatePortoLivePreview();
+}
+
+function updatePortoLivePreview() {
+  const modal = Math.max(0, Number(els.portoModal.value) || 0);
+  const profit = Math.max(0, Number(els.portoProfit.value) || 0);
+  els.portoModalFmt.textContent = formatRupiah(modal, state.unitMultiplier);
+  els.portoProfitFmt.textContent = formatRupiah(profit, state.unitMultiplier);
+
+  const enriched = enrichPortoEntry({
+    investDate: els.portoInvestDate.value || getDeviceTodayISO(),
+    cairDate: els.portoCairDate.value || els.portoInvestDate.value || getDeviceTodayISO(),
+    modal,
+    profit,
+  });
+
+  els.portoLivePreview.innerHTML = `Tenor: <b>${enriched.tenor} hr</b> • Profit/hr: <b>${formatRupiah(
+    enriched.profitPerDay,
+    state.unitMultiplier
+  )}</b> • Yield: <b>${formatPercent(enriched.yieldPerDay)}/hr</b> (${formatPercent(
+    enriched.yieldTotal
+  )} total)`;
+}
+
+function updatePortoNavBadge() {
+  const pendingCount = portoEntries.filter((e) => !e.isCair).length;
+  els.portoNavBadge.textContent = String(pendingCount);
+  els.portoNavBadge.hidden = pendingCount === 0;
+}
+
+function renderPorto() {
+  updatePortoNavBadge();
+  const summary = computePortoSummary(portoEntries);
+
+  els.portoActiveCount.textContent = String(summary.activeCount);
+  els.portoActiveModal.textContent = formatRupiah(summary.activeModal, state.unitMultiplier);
+  els.portoActiveProfit.textContent = formatRupiah(summary.activeProfit, state.unitMultiplier);
+  els.portoActiveCair.textContent = formatRupiah(summary.activeTotalCair, state.unitMultiplier);
+
+  els.portoCairCount.textContent = String(summary.cairCount);
+  els.portoCairModal.textContent = formatRupiah(summary.cairModal, state.unitMultiplier);
+  els.portoCairProfit.textContent = formatRupiah(summary.cairProfit, state.unitMultiplier);
+  els.portoCairTotal.textContent = formatRupiah(summary.cairTotal, state.unitMultiplier);
+
+  els.portoTotalCount.textContent = String(summary.totalCount);
+  els.portoTotalModal.textContent = formatRupiah(summary.totalModal, state.unitMultiplier);
+  els.portoTotalProfit.textContent = formatRupiah(summary.totalProfit, state.unitMultiplier);
+  els.portoAvgYield.textContent = `${formatPercent(summary.avgYieldPerDay)}/hr`;
+
+  const enrichedList = portoEntries
+    .map(enrichPortoEntry)
+    .filter((item) => {
+      if (portoFilter === 'pending') return !item.isCair;
+      if (portoFilter === 'cair') return item.isCair;
+      return true;
+    })
+    .sort((a, b) => {
+      // Pending first, then nearest cairDate; cair items newest cairDate first
+      if (a.isCair !== b.isCair) return a.isCair ? 1 : -1;
+      if (!a.isCair) return a.cairDate.localeCompare(b.cairDate);
+      return b.cairDate.localeCompare(a.cairDate);
+    });
+
+  els.portoList.innerHTML = '';
+  if (enrichedList.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = portoEntries.length === 0
+      ? 'Belum ada catatan investasi. Isi form di atas atau klik "+ Catat ke Porto" di Calculator.'
+      : 'Tidak ada data untuk filter ini.';
+    els.portoList.appendChild(empty);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const item of enrichedList) {
+    const card = document.createElement('div');
+    card.className = `porto-item ${item.isCair ? 'is-cair' : ''}`;
+
+    const top = document.createElement('div');
+    top.className = 'offer-top';
+
+    const modalEl = document.createElement('span');
+    modalEl.className = 'offer-modal';
+    modalEl.textContent = formatRupiah(item.modal, state.unitMultiplier);
+
+    const perDayEl = document.createElement('span');
+    perDayEl.className = 'offer-perday';
+    perDayEl.textContent = `${formatPercent(item.yieldPerDay)}/hr`;
+
+    top.append(modalEl, perDayEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'offer-meta';
+    const invShort = formatShortDate(normalizeDate(item.investDate));
+    const cairShort = formatShortDate(normalizeDate(item.cairDate));
+    meta.innerHTML = `
+      <span>Untung: <b>${formatRupiah(item.profit, state.unitMultiplier)}</b> (${formatPercent(item.yieldTotal)})</span>
+      <span>${invShort} → ${cairShort} (${item.tenor} hr)</span>
+      <span>+${formatRupiah(item.profitPerDay, state.unitMultiplier)}/hr</span>
+    `;
+
+    const badges = document.createElement('div');
+    badges.className = 'offer-badges';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = `badge ${item.isCair ? 'badge-cair' : 'badge-pending'}`;
+    statusBadge.textContent = item.isCair ? 'Sudah cair' : 'Masih nunggu';
+    badges.appendChild(statusBadge);
+
+    if (item.note) {
+      const noteBadge = document.createElement('span');
+      noteBadge.className = 'badge badge-taken';
+      noteBadge.textContent = item.note;
+      badges.appendChild(noteBadge);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'porto-item-actions';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'btn btn-outline';
+    toggleBtn.textContent = item.isCair ? 'Tandai Belum Cair' : 'Tandai Sudah Cair';
+    toggleBtn.addEventListener('click', () => {
+      portoEntries = portoEntries.map((e) =>
+        e.id === item.id ? { ...e, isCair: !e.isCair } : e
+      );
+      savePorto(portoEntries);
+      renderPorto();
+    });
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn btn-ghost';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => {
+      editingPortoId = item.id;
+      els.portoInvestDate.value = item.investDate;
+      els.portoCairDate.value = item.cairDate;
+      els.portoModal.value = String(item.modal);
+      els.portoProfit.value = String(item.profit);
+      els.portoNote.value = item.note || '';
+      els.portoIsCair.checked = item.isCair;
+      els.portoSubmitBtn.textContent = 'Update Catatan';
+      els.portoCancelEditBtn.hidden = false;
+      updatePortoLivePreview();
+      els.portoForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn btn-danger-outline';
+    delBtn.textContent = 'Hapus';
+    delBtn.addEventListener('click', () => {
+      portoEntries = portoEntries.filter((e) => e.id !== item.id);
+      savePorto(portoEntries);
+      if (editingPortoId === item.id) resetPortoForm();
+      renderPorto();
+      showToast('Catatan dihapus');
+    });
+
+    actions.append(toggleBtn, editBtn, delBtn);
+    card.append(top, meta, badges, actions);
+    frag.appendChild(card);
+  }
+
+  els.portoList.appendChild(frag);
+}
+
+// ==================== EVENT LISTENERS ====================
+
+for (const tab of els.navTabs) {
+  tab.addEventListener('click', () => {
+    switchPage(tab.dataset.page);
+  });
+}
+
+els.goSettingChip.addEventListener('click', () => {
+  switchPage('setting');
+});
+
 els.groupInput.addEventListener('input', () => {
   state.rawText = els.groupInput.value;
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.uangGue.addEventListener('input', () => {
   state.uangGue = els.uangGue.value;
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.saldoBandar.addEventListener('input', () => {
   state.saldoBandar = els.saldoBandar.value;
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.myTag.addEventListener('input', () => {
   state.myTag = els.myTag.value;
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.todayDate.addEventListener('change', () => {
   state.today = els.todayDate.value || getDeviceTodayISO();
-  handleInputChange();
+  handleCalcInputChange();
+});
+
+els.resetTodayBtn.addEventListener('click', () => {
+  state.today = getDeviceTodayISO();
+  handleCalcInputChange();
+  showToast('Tanggal direset ke hari ini');
+});
+
+els.unitSelect.addEventListener('change', () => {
+  state.unitMultiplier = Number(els.unitSelect.value) === 1 ? 1 : 1000;
+  saveState(state);
+  syncInputsFromState();
+  renderCalculator();
+  renderPorto();
+  updatePortoLivePreview();
 });
 
 els.modePerDay.addEventListener('click', () => {
   state.mode = 'perDay';
   els.modePerDay.classList.add('active');
   els.modeTotal.classList.remove('active');
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.modeTotal.addEventListener('click', () => {
   state.mode = 'total';
   els.modeTotal.classList.add('active');
   els.modePerDay.classList.remove('active');
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.recalcBtn.addEventListener('click', () => {
   manualSelectedIds = null;
-  render();
+  renderCalculator();
   showToast('Dihitung ulang optimal');
 });
 
@@ -511,7 +825,7 @@ els.pasteBtn.addEventListener('click', async () => {
       if (text) {
         state.rawText = text;
         els.groupInput.value = text;
-        handleInputChange();
+        handleCalcInputChange();
         showToast('Berhasil ditempel');
         return;
       }
@@ -526,7 +840,7 @@ els.pasteBtn.addEventListener('click', async () => {
 els.clearBtn.addEventListener('click', () => {
   state.rawText = '';
   els.groupInput.value = '';
-  handleInputChange();
+  handleCalcInputChange();
 });
 
 els.copyGroupBtn.addEventListener('click', async () => {
@@ -569,26 +883,138 @@ els.shareWaBtn.addEventListener('click', async () => {
   }
 });
 
-// Settings dialog
-els.settingsBtn.addEventListener('click', () => {
-  els.settingsDialog.showModal();
+els.saveSelectedToPortoBtn.addEventListener('click', () => {
+  const chosen = currentOffers.filter((o) => currentSelectedIds.has(o.id));
+  if (chosen.length === 0) {
+    showToast('Belum ada dapur terpilih');
+    return;
+  }
+  const investDate = state.today || getDeviceTodayISO();
+  for (const o of chosen) {
+    portoEntries.push(
+      enrichPortoEntry({
+        investDate,
+        cairDate: o.cairDate,
+        modal: o.modal,
+        profit: o.profit,
+        isCair: false,
+        note: 'Dari Calculator',
+      })
+    );
+  }
+  savePorto(portoEntries);
+  updatePortoNavBadge();
+  showToast(`${chosen.length} dapur dicatat ke Porto`);
 });
 
-els.closeSettingsBtn.addEventListener('click', () => {
-  els.settingsDialog.close();
+// Porto form events
+for (const inp of [els.portoInvestDate, els.portoCairDate, els.portoModal, els.portoProfit]) {
+  inp.addEventListener('input', updatePortoLivePreview);
+}
+
+els.portoForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const modal = Number(els.portoModal.value);
+  const profit = Number(els.portoProfit.value);
+  if (!(modal > 0)) {
+    showToast('Modal harus lebih dari 0');
+    return;
+  }
+  const entry = enrichPortoEntry({
+    id: editingPortoId || undefined,
+    investDate: els.portoInvestDate.value || getDeviceTodayISO(),
+    cairDate: els.portoCairDate.value || els.portoInvestDate.value || getDeviceTodayISO(),
+    modal,
+    profit: Math.max(0, profit || 0),
+    isCair: els.portoIsCair.checked,
+    note: els.portoNote.value,
+  });
+
+  if (editingPortoId) {
+    portoEntries = portoEntries.map((item) => (item.id === editingPortoId ? entry : item));
+    showToast('Catatan diperbarui');
+  } else {
+    portoEntries.push(entry);
+    showToast('Disimpan ke Porto');
+  }
+
+  savePorto(portoEntries);
+  resetPortoForm();
+  renderPorto();
 });
 
-els.settingsDialog.addEventListener('click', (e) => {
-  if (e.target === els.settingsDialog) {
-    els.settingsDialog.close();
+els.portoCancelEditBtn.addEventListener('click', () => {
+  resetPortoForm();
+});
+
+for (const pill of els.portoFilterPills) {
+  pill.addEventListener('click', () => {
+    portoFilter = pill.dataset.filter;
+    for (const p of els.portoFilterPills) {
+      p.classList.toggle('active', p === pill);
+    }
+    renderPorto();
+  });
+}
+
+// Setting backup & reset events
+els.exportDataBtn.addEventListener('click', () => {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state,
+    porto: portoEntries,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dapur-calc-backup-${getDeviceTodayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup diunduh');
+});
+
+els.importDataBtn.addEventListener('click', () => {
+  els.importFileInput.click();
+});
+
+els.importFileInput.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const parsed = JSON.parse(await file.text());
+    if (Array.isArray(parsed.porto)) {
+      portoEntries = parsed.porto.map(enrichPortoEntry);
+      savePorto(portoEntries);
+    }
+    if (parsed.state && typeof parsed.state === 'object') {
+      Object.assign(state, parsed.state);
+      saveState(state);
+    }
+    syncInputsFromState();
+    renderCalculator();
+    renderPorto();
+    showToast('Backup berhasil di-import');
+  } catch {
+    showToast('File backup tidak valid');
+  } finally {
+    els.importFileInput.value = '';
   }
 });
 
-els.unitSelect.addEventListener('change', () => {
-  state.unitMultiplier = Number(els.unitSelect.value) === 1 ? 1 : 1000;
-  saveState(state);
-  syncInputsFromState();
-  render();
+els.clearPortoBtn.addEventListener('click', () => {
+  if (portoEntries.length === 0) {
+    showToast('Porto sudah kosong');
+    return;
+  }
+  if (window.confirm('Yakin hapus semua catatan portofolio?')) {
+    portoEntries = [];
+    savePorto(portoEntries);
+    resetPortoForm();
+    renderPorto();
+    showToast('Semua catatan Porto dihapus');
+  }
 });
 
 // PWA Install prompt
@@ -625,4 +1051,7 @@ if ('serviceWorker' in navigator) {
 
 // Initial render
 syncInputsFromState();
-render();
+resetPortoForm();
+updatePortoNavBadge();
+renderCalculator();
+switchPage(state.activePage);

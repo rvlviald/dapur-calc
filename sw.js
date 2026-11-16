@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dapur-calc-v1';
+const CACHE_NAME = 'dapur-calc-v2';
 
 const APP_SHELL = [
   './',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './app.js',
   './parser.js',
   './optimizer.js',
+  './porto.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

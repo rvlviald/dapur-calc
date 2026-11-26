@@ -133,6 +133,7 @@ const els = {
   shareWaBtn: document.getElementById('shareWaBtn'),
   copyMineBtn: document.getElementById('copyMineBtn'),
   summaryTopup: document.getElementById('summaryTopup'),
+  copyTopupBtn: document.getElementById('copyTopupBtn'),
   summaryModal: document.getElementById('summaryModal'),
   summaryTransferBandar: document.getElementById('summaryTransferBandar'),
   summaryProfitDay: document.getElementById('summaryProfitDay'),
@@ -574,7 +575,11 @@ function renderReplyPreview(rawText, offers, selectedIds, myTag) {
   pre.appendChild(frag);
 }
 
+let currentSummaryTopup = 0;
+
 function renderSummaryBar(summary) {
+  currentSummaryTopup = Math.max(0, Number(summary.topup) || 0);
+  els.copyTopupBtn.hidden = currentSummaryTopup <= 0;
   els.summaryModal.textContent = formatRupiah(
     summary.totalModal,
     state.unitMultiplier
@@ -919,6 +924,20 @@ els.copyMineBtn.addEventListener('click', async () => {
   }
   const ok = await copyToClipboard(mine);
   showToast(ok ? 'Tersalin' : 'Gagal menyalin');
+});
+
+els.copyTopupBtn.addEventListener('click', async () => {
+  if (currentSummaryTopup <= 0) {
+    showToast('Tidak perlu transfer ke bandar');
+    return;
+  }
+  const fullRupiah = Math.round(currentSummaryTopup * state.unitMultiplier);
+  const ok = await copyToClipboard(String(fullRupiah));
+  showToast(
+    ok
+      ? `Nominal transfer disalin: ${fullRupiah}`
+      : 'Gagal menyalin'
+  );
 });
 
 els.shareWaBtn.addEventListener('click', async () => {

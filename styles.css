@@ -668,10 +668,16 @@ select:focus {
 
 .summary-topup {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.summary-topup-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .summary-label {

@@ -33,7 +33,8 @@ function loadState() {
     return {
       ...defaults,
       ...saved,
-      today: saved.today || defaults.today,
+      // Always default to today's date on load so interest/tenor starts from the calculation day
+      today: defaults.today,
       myTag: saved.myTag || defaults.myTag,
       unitMultiplier: Number(saved.unitMultiplier) === 1 ? 1 : 1000,
       mode: saved.mode === 'total' ? 'total' : 'perDay',
@@ -90,6 +91,10 @@ function formatPercent(ratio) {
   return `${(ratio * 100).toFixed(2).replace('.', ',')}%`;
 }
 
+function formatYieldDailyAndAnnual(yieldPerDay) {
+  return `${formatPercent(yieldPerDay)}/hr (~${formatPercent(yieldPerDay * 365)}/thn)`;
+}
+
 // DOM references
 const els = {
   // Navigation & pages
@@ -110,6 +115,7 @@ const els = {
   saldoBandar: document.getElementById('saldoBandar'),
   uangGueFmt: document.getElementById('uangGueFmt'),
   saldoBandarFmt: document.getElementById('saldoBandarFmt'),
+  totalModalInputFmt: document.getElementById('totalModalInputFmt'),
   unitLabel1: document.getElementById('unitLabel1'),
   unitLabel2: document.getElementById('unitLabel2'),
   modePerDay: document.getElementById('modePerDay'),
@@ -128,6 +134,7 @@ const els = {
   copyMineBtn: document.getElementById('copyMineBtn'),
   summaryTopup: document.getElementById('summaryTopup'),
   summaryModal: document.getElementById('summaryModal'),
+  summaryTransferBandar: document.getElementById('summaryTransferBandar'),
   summaryProfitDay: document.getElementById('summaryProfitDay'),
   summaryProfitTotal: document.getElementById('summaryProfitTotal'),
   summarySisa: document.getElementById('summarySisa'),
@@ -279,6 +286,7 @@ function updateMoneyHints() {
   const saldo = Math.max(0, Number(state.saldoBandar) || 0);
   els.uangGueFmt.textContent = formatRupiah(uang, state.unitMultiplier);
   els.saldoBandarFmt.textContent = formatRupiah(saldo, state.unitMultiplier);
+  els.totalModalInputFmt.textContent = formatRupiah(uang + saldo, state.unitMultiplier);
 }
 
 function sortOffersForDisplay(offers) {
@@ -466,7 +474,7 @@ function renderOffersList(offers, selectedIds, summary) {
     const m2 = document.createElement('span');
     m2.textContent = `Cair: ${offer.cairShort} (${offer.tenor} hr)`;
     const m3 = document.createElement('span');
-    m3.textContent = `Yield: ${formatPercent(offer.yieldPerDay)}/hr`;
+    m3.textContent = `Yield: ${formatYieldDailyAndAnnual(offer.yieldPerDay)}`;
     meta.append(m1, m2, m3);
 
     body.append(top, meta);
@@ -571,6 +579,10 @@ function renderSummaryBar(summary) {
     summary.totalModal,
     state.unitMultiplier
   );
+  els.summaryTransferBandar.textContent = formatRupiah(
+    summary.topup,
+    state.unitMultiplier
+  );
   els.summaryProfitDay.textContent = formatRupiah(
     summary.totalProfitPerDay,
     state.unitMultiplier
@@ -640,9 +652,9 @@ function updatePortoLivePreview() {
   els.portoLivePreview.innerHTML = `Tenor: <b>${enriched.tenor} hr</b> • Profit/hr: <b>${formatRupiah(
     enriched.profitPerDay,
     state.unitMultiplier
-  )}</b> • Yield: <b>${formatPercent(enriched.yieldPerDay)}/hr</b> (${formatPercent(
-    enriched.yieldTotal
-  )} total)`;
+  )}</b> • Yield: <b>${formatPercent(enriched.yieldPerDay)}/hr</b> (~<b>${formatPercent(
+    enriched.yieldPerDay * 365
+  )}/thn</b>, ${formatPercent(enriched.yieldTotal)} total)`;
 }
 
 function updatePortoNavBadge() {
@@ -668,7 +680,7 @@ function renderPorto() {
   els.portoTotalCount.textContent = String(summary.totalCount);
   els.portoTotalModal.textContent = formatRupiah(summary.totalModal, state.unitMultiplier);
   els.portoTotalProfit.textContent = formatRupiah(summary.totalProfit, state.unitMultiplier);
-  els.portoAvgYield.textContent = `${formatPercent(summary.avgYieldPerDay)}/hr`;
+  els.portoAvgYield.textContent = formatYieldDailyAndAnnual(summary.avgYieldPerDay);
 
   const enrichedList = portoEntries
     .map(enrichPortoEntry)
@@ -709,7 +721,7 @@ function renderPorto() {
 
     const perDayEl = document.createElement('span');
     perDayEl.className = 'offer-perday';
-    perDayEl.textContent = `${formatPercent(item.yieldPerDay)}/hr`;
+    perDayEl.textContent = formatYieldDailyAndAnnual(item.yieldPerDay);
 
     top.append(modalEl, perDayEl);
 

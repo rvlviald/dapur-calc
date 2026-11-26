@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dapur-calc-v5';
+const CACHE_NAME = 'dapur-calc-v6';
 
 const APP_SHELL = [
   './',

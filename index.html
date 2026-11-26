@@ -91,6 +91,10 @@
             <div class="field-hint" id="saldoBandarFmt">Rp 0</div>
           </div>
         </div>
+        <div class="modal-total-bar">
+          <span>Total modal (uang gue + saldo bandar)</span>
+          <strong id="totalModalInputFmt">Rp 0</strong>
+        </div>
       </section>
 
       <div id="calcEmptyGuide" class="empty-state">
@@ -174,7 +178,7 @@
             <div class="stat-total-right">
               <span class="stat-label">Total Profit</span>
               <strong id="portoTotalProfit" class="stat-value is-green">Rp 0</strong>
-              <span class="stat-sub">Rata-rata: <b id="portoAvgYield">0,00%/hr</b></span>
+              <span class="stat-sub">Rata-rata: <b id="portoAvgYield">0,00%/hr (~0,00%/thn)</b></span>
             </div>
           </div>
         </div>
@@ -221,7 +225,7 @@
           </label>
 
           <div id="portoLivePreview" class="porto-live-preview">
-            Tenor: <b>1 hr</b> • Profit/hr: <b>Rp 0</b> • Yield: <b>0,00%/hr</b> (0,00% total)
+            Tenor: <b>1 hr</b> • Profit/hr: <b>Rp 0</b> • Yield: <b>0,00%/hr</b> (~<b>0,00%/thn</b>, 0,00% total)
           </div>
 
           <button id="portoSubmitBtn" class="btn btn-primary btn-lg" type="submit">
@@ -315,6 +319,10 @@
         <div class="metric">
           <span>Modal terpilih</span>
           <strong id="summaryModal">Rp 0</strong>
+        </div>
+        <div class="metric">
+          <span>Transfer ke bandar</span>
+          <strong id="summaryTransferBandar">Rp 0</strong>
         </div>
         <div class="metric">
           <span>Profit / hari</span>
